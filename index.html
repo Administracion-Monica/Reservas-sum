@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Reservas · SUM del Edificio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --cream: #F7F3EE; --warm-white: #FDFBF8; --charcoal: #1C1C1C;
+    --mid: #5C5C5C; --light: #A8A29E; --accent: #C17A3B;
+    --accent-light: #F0E0CC; --error: #B94A3A; --success: #3A7A5C;
+    --border: #E0D8CF; --shadow: 0 2px 20px rgba(28,28,28,0.08);
+  }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--charcoal); min-height: 100vh; -webkit-text-size-adjust: 100%; overflow-x: hidden; }
+
+  header { background: var(--charcoal); color: var(--cream); padding: 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+  header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(1.1rem, 4vw, 1.5rem); letter-spacing: -0.02em; }
+  header span { font-size: 0.7rem; color: var(--light); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .tabs-wrap { position: sticky; top: 61px; z-index: 99; background: var(--cream); border-bottom: 2px solid var(--border); }
+  .tabs { display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600; padding: 14px 20px; background: none; border: none; cursor: pointer; color: var(--light); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color 0.2s, border-color 0.2s; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
+  .tab:hover { color: var(--charcoal); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  .container { max-width: 600px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  .section-label { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); font-weight: 600; margin-bottom: 6px; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(1.3rem, 5vw, 1.6rem); color: var(--charcoal); margin-bottom: 20px; }
+  .card { background: var(--warm-white); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.78rem; font-weight: 500; color: var(--mid); }
+
+  .date-row { display: grid; grid-template-columns: 1fr 1fr 1.5fr; gap: 8px; }
+  .date-row input { text-align: center; }
+
+  input, select { font-family: 'DM Sans', sans-serif; font-size: 16px; padding: 13px 14px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--cream); color: var(--charcoal); transition: border-color 0.2s, box-shadow 0.2s; outline: none; width: 100%; -webkit-appearance: none; appearance: none; }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(193,122,59,0.12); }
+  input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+  input[type=number] { -moz-appearance: textfield; }
+
+  .turno-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .turno-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 22px 12px; border: 2px solid var(--border); border-radius: 14px; background: var(--cream); cursor: pointer; transition: all 0.2s; font-family: 'DM Sans', sans-serif; position: relative; -webkit-tap-highlight-color: transparent; }
+  .turno-btn:active:not(.ocupado) { transform: scale(0.97); }
+  .turno-btn.selected { border-color: var(--accent); background: var(--accent-light); }
+  .turno-btn.ocupado { opacity: 0.55; cursor: not-allowed; background: #f0ebe6; border-color: #d4c8be; }
+  .turno-btn .turno-icon { font-size: 2rem; }
+  .turno-btn .turno-label { font-size: 0.95rem; font-weight: 700; color: var(--charcoal); }
+  .turno-btn.ocupado .turno-label { color: var(--error); font-size: 0.85rem; }
+  .turno-btn .turno-sub { font-size: 0.72rem; color: var(--mid); }
+
+  .btn { font-family: 'DM Sans', sans-serif; font-size: 0.95rem; font-weight: 600; padding: 15px 24px; border: none; border-radius: 12px; cursor: pointer; transition: transform 0.15s; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .btn-primary { background: var(--charcoal); color: var(--cream); width: 100%; margin-top: 10px; }
+  .btn-primary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-danger { background: transparent; color: var(--error); border: 1px solid var(--error); padding: 10px 16px; font-size: 0.82rem; border-radius: 8px; cursor: pointer; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+  .btn-outline { background: transparent; color: var(--charcoal); border: 1.5px solid var(--border); }
+  .btn-secondary { background: var(--accent); color: white; }
+  .btn-secondary:active:not(:disabled) { transform: scale(0.98); }
+  .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .alert { padding: 12px 16px; border-radius: 10px; font-size: 0.85rem; font-weight: 500; margin-bottom: 16px; display: none; line-height: 1.4; }
+  .alert.show { display: flex; align-items: flex-start; gap: 8px; animation: slideIn 0.25s ease; }
+  .alert-error { background: #FDF1EF; color: var(--error); border: 1px solid #E8B4AD; }
+  .alert-success { background: #EBF5F0; color: var(--success); border: 1px solid #A8D4BC; }
+  @keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+
+  .filter-row { display: flex; gap: 10px; margin-bottom: 16px; }
+  .filter-row input { flex: 1; }
+  .filter-row .btn { padding: 12px 14px; font-size: 0.83rem; flex-shrink: 0; }
+
+  .reserva-item { background: var(--warm-white); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .reserva-info { flex: 1; min-width: 0; }
+  .reserva-nombre { font-weight: 600; font-size: 0.95rem; margin-bottom: 3px; }
+  .reserva-depto { font-size: 0.73rem; color: var(--accent); font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 5px; }
+  .reserva-meta { font-size: 0.8rem; color: var(--mid); line-height: 1.6; }
+  .reserva-badge { font-size: 0.8rem; font-weight: 700; padding: 5px 12px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+  .badge-manana { background: #FFF8E1; color: #B8860B; }
+  .badge-noche { background: #EEF0FF; color: #4B5ADE; }
+
+  .empty-state { text-align: center; padding: 40px 16px; color: var(--light); }
+  .empty-state .icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .loading { text-align: center; padding: 32px; color: var(--light); font-size: 0.85rem; }
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin-right: 8px; vertical-align: middle; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .email-buscar { display: flex; gap: 10px; margin-bottom: 20px; }
+  .email-buscar input { flex: 1; }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(28,28,28,0.55); display: flex; align-items: flex-end; justify-content: center; z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal { background: var(--warm-white); border-radius: 20px 20px 0 0; padding: 28px 20px 40px; width: 100%; max-width: 500px; transform: translateY(40px); transition: transform 0.25s ease; text-align: center; }
+  .modal-overlay.show .modal { transform: translateY(0); }
+  .modal h3 { font-family: 'DM Serif Display', serif; font-size: 1.3rem; margin-bottom: 8px; }
+  .modal p { color: var(--mid); font-size: 0.85rem; margin-bottom: 24px; line-height: 1.5; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btns button { flex: 1; }
+  .btn-red { background: var(--error); color: white; border: none; }
+  .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+
+  @media (max-width: 480px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-group.full { grid-column: 1; }
+    .card { padding: 16px; }
+    .turno-btn { padding: 18px 10px; }
+    .email-buscar { flex-direction: column; }
+    .email-buscar input { width: 100%; }
+    .reserva-item { flex-wrap: wrap; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📋 Reservas · Salón SUM</h1>
+  <span>Edificio</span>
+</header>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="cambiarTab('reservar', this)">✦ Hacer una reserva</button>
+    <button class="tab" onclick="cambiarTab('ver', this)">📅 Ver reservas</button>
+    <button class="tab" onclick="cambiarTab('cancelar', this)">✕ Cancelar mi reserva</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <div id="tab-reservar" class="tab-content active">
+    <div class="section-label">Nueva reserva</div>
+    <div class="section-title">Registrá tu turno</div>
+    <div class="card">
+      <div id="alerta-reservar" class="alert"></div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre completo *</label>
+          <input type="text" id="nombre" placeholder="Ej: María González" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label>Departamento *</label>
+          <input type="text" id="depto" placeholder="Ej: 3B" />
+        </div>
+        <div class="form-group full">
+          <label>Email * (lo necesitás para cancelar)</label>
+          <input type="email" id="email" placeholder="tu@email.com" inputmode="email" />
+        </div>
+        <div class="form-group full">
+          <label>Fecha * (DD / MM / AAAA)</label>
+          <div class="date-row">
+            <input type="number" id="fecha-dia" placeholder="DD" min="1" max="31" inputmode="numeric" oninput="actualizarFechaISO()" />
+            <input type="number" id="fecha-mes" placeholder="MM" min="1" max="12" inputmode="numeric" oninput="actualizarFechaISO()" />
+            <input type="number" id="fecha-anio" placeholder="AAAA" min="2024" max="2099" inputmode="numeric" oninput="actualizarFechaISO()" />
+          </div>
+          <span id="fecha-error" style="font-size:0.75rem;color:var(--error);display:none;margin-top:4px;">Fecha inválida</span>
+        </div>
+        <div class="form-group full">
+          <label>Turno *</label>
+          <div class="turno-grid">
+            <button type="button" class="turno-btn" id="btn-manana" onclick="seleccionarTurno('Mañana')">
+              <span class="turno-icon">🌅</span>
+              <span class="turno-label">Mañana</span>
+              <span class="turno-sub" id="sub-manana">Disponible</span>
+            </button>
+            <button type="button" class="turno-btn" id="btn-noche" onclick="seleccionarTurno('Noche')">
+              <span class="turno-icon">🌙</span>
+              <span class="turno-label">Noche</span>
+              <span class="turno-sub" id="sub-noche">Disponible</span>
+            </button>
+          </div>
+        </div>
+        <div class="form-group full">
+          <label>Teléfono</label>
+          <input type="tel" id="telefono" placeholder="11-2345-6789" inputmode="tel" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-reservar" onclick="confirmarReserva()">✓ Confirmar reserva</button>
+    </div>
+  </div>
+
+  <div id="tab-ver" class="tab-content">
+    <div class="section-label">Calendario</div>
+    <div class="section-title">Reservas registradas</div>
+    <div class="filter-row">
+      <input type="text" id="filtro-texto" placeholder="Buscar nombre o depto..." oninput="renderReservas()" />
+      <button class="btn btn-outline" onclick="cargarReservas()">🔄</button>
+    </div>
+    <div id="lista-reservas"><div class="loading"><span class="spinner"></span>Cargando...</div></div>
+  </div>
+
+  <div id="tab-cancelar" class="tab-content">
+    <div class="section-label">Cancelar reserva</div>
+    <div class="section-title">Buscá tus reservas</div>
+    <div class="card">
+      <div id="alerta-cancelar" class="alert"></div>
+      <p style="font-size:0.85rem;color:var(--mid);margin-bottom:18px;line-height:1.5;">Ingresá el email con el que hiciste la reserva. Solo podés cancelar las tuyas.</p>
+      <div class="email-buscar">
+        <input type="email" id="email-cancelar" placeholder="tu@email.com" inputmode="email" />
+        <button class="btn btn-secondary" onclick="buscarMisReservas()">Buscar</button>
+      </div>
+      <div id="mis-reservas"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="font-size:2rem;margin-bottom:10px;">🗑️</div>
+    <h3>Cancelar reserva</h3>
+    <p id="modal-texto"></p>
+    <div class="modal-btns">
+      <button class="btn btn-outline" onclick="cerrarModal()">No, volver</button>
+      <button class="btn btn-red" id="btn-confirmar-eliminar" onclick="eliminarConfirmado()">Sí, cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  var SCRIPT_URL = "<?= SCRIPT_URL ?>";
+  var turnoSeleccionado = "";
+  var fechaISO = "";
+  var reservasCache = [];
+
+  function cambiarTab(id, btn) {
+    document.querySelectorAll(".tab-content").forEach(function(t){ t.classList.remove("active"); });
+    document.querySelectorAll(".tab").forEach(function(t){ t.classList.remove("active"); });
+    document.getElementById("tab-" + id).classList.add("active");
+    btn.classList.add("active");
+    if (id === "ver") cargarReservas();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function normalizarFecha(val) {
+    if (!val) return "";
+    var s = String(val).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    var dt = new Date(s);
+    if (!isNaN(dt.getTime())) {
+      var y = dt.getFullYear();
+      var m = String(dt.getMonth() + 1).padStart(2, "0");
+      var d = String(dt.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + d;
+    }
+    return s;
+  }
+
+  function actualizarFechaISO() {
+    var d = document.getElementById("fecha-dia").value.padStart(2,"0");
+    var m = document.getElementById("fecha-mes").value.padStart(2,"0");
+    var a = document.getElementById("fecha-anio").value;
+    var errEl = document.getElementById("fecha-error");
+    if (!d || !m || !a || a.length < 4) { fechaISO = ""; errEl.style.display="none"; actualizarTurnos(); return; }
+    var candidate = a + "-" + m + "-" + d;
+    var dt = new Date(candidate + "T12:00:00");
+    if (isNaN(dt) || dt.getMonth()+1 !== parseInt(m) || dt.getDate() !== parseInt(d)) {
+      fechaISO = ""; errEl.style.display = "block"; actualizarTurnos();
+    } else {
+      fechaISO = candidate; errEl.style.display = "none";
+      fetch(SCRIPT_URL + "?action=listar")
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if (data.ok) {
+            reservasCache = data.reservas.map(function(r){
+              return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+            });
+            actualizarTurnos();
+          }
+        })
+        .catch(function(){ actualizarTurnos(); });
+    }
+  }
+
+  function actualizarTurnos() {
+    var btnM = document.getElementById("btn-manana");
+    var btnN = document.getElementById("btn-noche");
+    var subM = document.getElementById("sub-manana");
+    var subN = document.getElementById("sub-noche");
+
+    [btnM, btnN].forEach(function(b){ b.classList.remove("ocupado","selected"); });
+    btnM.querySelector(".turno-label").textContent = "Mañana";
+    btnN.querySelector(".turno-label").textContent = "Noche";
+    subM.textContent = "Disponible";
+    subN.textContent = "Disponible";
+    turnoSeleccionado = "";
+
+    if (!fechaISO) return;
+
+    var ocupados = reservasCache
+      .filter(function(r){ return r.fecha === fechaISO; })
+      .map(function(r){ return r.turno; });
+
+    if (ocupados.indexOf("Mañana") >= 0) {
+      btnM.classList.add("ocupado");
+      btnM.querySelector(".turno-label").textContent = "No disponible";
+      subM.textContent = "";
+    }
+    if (ocupados.indexOf("Noche") >= 0) {
+      btnN.classList.add("ocupado");
+      btnN.querySelector(".turno-label").textContent = "No disponible";
+      subN.textContent = "";
+    }
+  }
+
+  function seleccionarTurno(turno) {
+    var id = turno === "Mañana" ? "btn-manana" : "btn-noche";
+    var btn = document.getElementById(id);
+    if (btn.classList.contains("ocupado")) return;
+    document.querySelectorAll(".turno-btn").forEach(function(b){ b.classList.remove("selected"); });
+    btn.classList.add("selected");
+    turnoSeleccionado = turno;
+  }
+
+  function fechaLegible(s) {
+    if (!s) return "";
+    var norm = normalizarFecha(s);
+    var p = norm.split("-");
+    if (p.length === 3) return p[2] + "/" + p[1] + "/" + p[0];
+    return s;
+  }
+
+  function mostrarAlerta(id, msg, tipo) {
+    tipo = tipo || "error";
+    var el = document.getElementById(id);
+    el.textContent = (tipo === "error" ? "⚠️ " : "✓ ") + msg;
+    el.className = "alert show alert-" + tipo;
+    if (tipo === "success") setTimeout(function(){ el.className = "alert"; }, 5000);
+  }
+
+  function cargarReservas() {
+    var cont = document.getElementById("lista-reservas");
+    cont.innerHTML = '<div class="loading"><span class="spinner"></span>Cargando...</div>';
+    fetch(SCRIPT_URL + "?action=listar")
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.ok) {
+          reservasCache = data.reservas.map(function(r){
+            return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+          });
+          renderReservas();
+          actualizarTurnos();
+        } else {
+          cont.innerHTML = '<div class="empty-state"><div class="icon">❌</div><p>Error: ' + data.error + '</p></div>';
+        }
+      })
+      .catch(function(){
+        cont.innerHTML = '<div class="empty-state"><div class="icon">🔌</div><p>No se pudo conectar.</p></div>';
+      });
+  }
+
+  function renderReservas() {
+    var filtro = document.getElementById("filtro-texto").value.toLowerCase();
+    var dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+    var arr = reservasCache.slice();
+    if (filtro) arr = arr.filter(function(r){ return r.nombre.toLowerCase().indexOf(filtro) >= 0 || r.depto.toLowerCase().indexOf(filtro) >= 0; });
+    arr.sort(function(a,b){ return a.fecha.localeCompare(b.fecha) || a.turno.localeCompare(b.turno); });
+    var cont = document.getElementById("lista-reservas");
+    if (!arr.length) { cont.innerHTML = '<div class="empty-state"><div class="icon">🗓️</div><p>No hay reservas registradas.</p></div>'; return; }
+    cont.innerHTML = arr.map(function(r){
+      var ds = dias[new Date(r.fecha + "T12:00:00").getDay()];
+      var icon = r.turno === "Mañana" ? "🌅" : "🌙";
+      var bc = r.turno === "Mañana" ? "badge-manana" : "badge-noche";
+      return '<div class="reserva-item"><div class="reserva-info"><div class="reserva-depto">Depto ' + r.depto + '</div><div class="reserva-nombre">' + r.nombre + '</div><div class="reserva-meta">📅 ' + ds + ' ' + fechaLegible(r.fecha) + '</div></div><span class="reserva-badge ' + bc + '">' + icon + ' ' + r.turno + '</span></div>';
+    }).join("");
+  }
+
+  function confirmarReserva() {
+    var nombre = document.getElementById("nombre").value.trim();
+    var depto = document.getElementById("depto").value.trim();
+    var email = document.getElementById("email").value.trim();
+    var telefono = document.getElementById("telefono").value.trim();
+    if (!nombre) return mostrarAlerta("alerta-reservar","Ingresá tu nombre completo.");
+    if (!depto) return mostrarAlerta("alerta-reservar","Ingresá el número de departamento.");
+    if (!email || email.indexOf("@") < 0) return mostrarAlerta("alerta-reservar","Ingresá un email válido.");
+    if (!fechaISO) return mostrarAlerta("alerta-reservar","Ingresá una fecha válida.");
+    var hoy = new Date(); hoy.setHours(0,0,0,0);
+    if (new Date(fechaISO + "T00:00:00") < hoy) return mostrarAlerta("alerta-reservar","No podés reservar en una fecha pasada.");
+    if (!turnoSeleccionado) return mostrarAlerta("alerta-reservar","Seleccioná un turno.");
+    var btn = document.getElementById("btn-reservar");
+    btn.disabled = true; btn.textContent = "Guardando...";
+    fetch(SCRIPT_URL, { method:"POST", body: JSON.stringify({ action:"crear", nombre:nombre, depto:depto, fecha:fechaISO, turno:turnoSeleccionado, telefono:telefono, email:email }) })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.ok) { mostrarAlerta("alerta-reservar","¡Reserva confirmada!","success"); limpiarFormulario(); cargarReservas(); }
+        else mostrarAlerta("alerta-reservar", data.error || "No se pudo guardar.");
+      })
+      .catch(function(){ mostrarAlerta("alerta-reservar","Error de conexión."); })
+      .finally(function(){ btn.disabled = false; btn.textContent = "✓ Confirmar reserva"; });
+  }
+
+  function limpiarFormulario() {
+    ["nombre","depto","email","telefono"].forEach(function(id){ document.getElementById(id).value=""; });
+    document.getElementById("fecha-dia").value="";
+    document.getElementById("fecha-mes").value="";
+    document.getElementById("fecha-anio").value = new Date().getFullYear();
+    fechaISO = ""; turnoSeleccionado = "";
+    document.querySelectorAll(".turno-btn").forEach(function(b){ b.classList.remove("selected"); });
+    actualizarTurnos();
+  }
+
+  function buscarMisReservas() {
+    var emailBuscar = document.getElementById("email-cancelar").value.trim().toLowerCase();
+    if (!emailBuscar || emailBuscar.indexOf("@") < 0) { mostrarAlerta("alerta-cancelar","Ingresá un email válido."); return; }
+    var cont = document.getElementById("mis-reservas");
+    cont.innerHTML = '<div class="loading"><span class="spinner"></span>Buscando...</div>';
+    fetch(SCRIPT_URL + "?action=listar")
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.ok) {
+          reservasCache = data.reservas.map(function(r){
+            return Object.assign({}, r, { fecha: normalizarFecha(r.fecha) });
+          });
+        }
+      })
+      .catch(function(){})
+      .finally(function(){
+        var dias = ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"];
+        var misRes = reservasCache.filter(function(r){ return String(r.email).toLowerCase().trim() === emailBuscar; });
+        misRes.sort(function(a,b){ return a.fecha.localeCompare(b.fecha) || a.turno.localeCompare(b.turno); });
+        if (!misRes.length) { cont.innerHTML = '<div class="empty-state" style="padding:24px 0"><div class="icon">🔍</div><p>No encontramos reservas para ese email.</p></div>'; return; }
+        cont.innerHTML = '<p style="font-size:0.82rem;color:var(--mid);margin-bottom:14px;">Encontramos ' + misRes.length + ' reserva(s) tuya(s):</p>' +
+          misRes.map(function(r){
+            var ds = dias[new Date(r.fecha + "T12:00:00").getDay()];
+            var icon = r.turno === "Mañana" ? "🌅" : "🌙";
+            var bc = r.turno === "Mañana" ? "badge-manana" : "badge-noche";
+            return '<div class="reserva-item"><div class="reserva-info"><div class="reserva-depto">Depto ' + r.depto + '</div><div class="reserva-nombre">' + r.nombre + '</div><div class="reserva-meta">📅 ' + ds + ' ' + fechaLegible(r.fecha) + '</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0;"><span class="reserva-badge ' + bc + '">' + icon + ' ' + r.turno + '</span><button class="btn btn-danger" onclick="pedirEliminar(\'' + r.id + '\',\'' + r.nombre.replace(/'/g,"\\'") + '\',\'' + fechaLegible(r.fecha) + '\',\'' + r.turno + '\',\'' + emailBuscar + '\')">Cancelar</button></div></div>';
+          }).join("");
+      });
+  }
+
+  var idParaEliminar = null, emailParaEliminar = null;
+
+  function pedirEliminar(id, nombre, fecha, turno, email) {
+    idParaEliminar = id; emailParaEliminar = email;
+    document.getElementById("modal-texto").textContent = "¿Cancelar el turno " + turno + " de " + nombre + " del " + fecha + "?";
+    document.getElementById("modal").classList.add("show");
+  }
+  function cerrarModal() {
+    idParaEliminar = null; emailParaEliminar = null;
+    document.getElementById("modal").classList.remove("show");
+  }
+  function eliminarConfirmado() {
+    var btn = document.getElementById("btn-confirmar-eliminar");
+    btn.disabled = true; btn.textContent = "Cancelando...";
+    var idEnviar = idParaEliminar;
+    var emailEnviar = emailParaEliminar;
+    cerrarModal();
+    fetch(SCRIPT_URL, { method:"POST", body: JSON.stringify({ action:"eliminar", id: idEnviar, email: emailEnviar }) })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        if (data.ok) {
+          mostrarAlerta("alerta-cancelar", "✅ ¡Reserva cancelada correctamente!", "success");
+          // Limpiar la lista y volver a buscar para reflejar el cambio
+          document.getElementById("mis-reservas").innerHTML = "";
+          buscarMisReservas();
+        } else {
+          mostrarAlerta("alerta-cancelar", data.error || "No se pudo cancelar.");
+        }
+      })
+      .catch(function(){ mostrarAlerta("alerta-cancelar","Error de conexión."); })
+      .finally(function(){ btn.disabled = false; btn.textContent = "Sí, cancelar"; });
+  }
+
+  document.getElementById("modal").addEventListener("click", function(e){ if(e.target===e.currentTarget) cerrarModal(); });
+
+  window.addEventListener("DOMContentLoaded", function(){
+    document.getElementById("fecha-anio").value = new Date().getFullYear();
+    cargarReservas();
+  });
+</script>
+</body>
+</html>
